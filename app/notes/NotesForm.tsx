@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { saveEncoding } from "@/app/actions";
 import { renderTemplate, buildAiPrompt, joinWithEt } from "@/lib/template";
 import {
@@ -105,6 +106,7 @@ export default function NotesForm({
   templates: Template[];
   encodings: StudentEncoding[];
 }) {
+  const searchParams = useSearchParams();
   const [year, setYear] = useState<number | null>(null);
   const [classId, setClassId] = useState<string>("");
   const [studentId, setStudentId] = useState<string>("");
@@ -112,6 +114,23 @@ export default function NotesForm({
   const [form, setForm] = useState<FormState>(defaultFormState());
   const [saving, setSaving] = useState(false);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
+
+  // Pré-sélection via lien profond (?studentId=&period=), ex. depuis la page Données encodées.
+  useEffect(() => {
+    const sid = searchParams.get("studentId");
+    const p = searchParams.get("period");
+    if (sid) {
+      const target = students.find((s) => s.id === sid);
+      if (target) {
+        const cls = classes.find((c) => c.id === target.class_id);
+        if (cls) setYear(cls.year);
+        setClassId(target.class_id);
+        setStudentId(sid);
+      }
+    }
+    if (p && PERIODS.includes(p as Period)) setPeriod(p as Period);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const encodingsByKey = useMemo(() => {
     const map = new Map<string, StudentEncoding>();
