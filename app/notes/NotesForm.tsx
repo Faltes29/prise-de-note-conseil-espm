@@ -299,36 +299,20 @@ export default function NotesForm({
     if (prev) setStudentId(prev.id);
   }
 
+  function rotateStudent(direction: 1 | -1) {
+    if (studentsForClass.length === 0) return;
+    const idx = studentsForClass.findIndex((s) => s.id === studentId);
+    const nextIdx = idx === -1 ? 0 : (idx + direction + studentsForClass.length) % studentsForClass.length;
+    setStudentId(studentsForClass[nextIdx].id);
+  }
+
   function copyToClipboard(text: string) {
     navigator.clipboard.writeText(text);
   }
 
   return (
-    <main className="mx-auto max-w-6xl gap-6 px-4 py-6 lg:flex">
-      <aside className="no-print mb-6 w-full shrink-0 space-y-1 lg:mb-0 lg:w-48">
-        <p className="mb-2 text-xs font-medium uppercase text-indigo-500">Élèves de la classe</p>
-        {studentsForClass.map((s) => {
-          const done = encodingsByKey.has(`${s.id}__${period}`);
-          return (
-            <button
-              key={s.id}
-              onClick={() => setStudentId(s.id)}
-              className={`flex w-full items-center gap-2 rounded px-2 py-1 text-left text-sm hover:bg-indigo-50 ${
-                s.id === studentId ? "bg-indigo-100 font-medium text-indigo-900" : ""
-              }`}
-            >
-              <span className={`h-2 w-2 rounded-full ${done ? "bg-green-500" : "bg-gray-300"}`} />
-              {s.last_name} {s.first_name}
-            </button>
-          );
-        })}
-        {classId && studentsForClass.length === 0 && (
-          <p className="text-sm text-gray-400">Aucun élève dans cette classe.</p>
-        )}
-      </aside>
-
-      <div className="flex-1 space-y-6">
-        <section className="grid gap-4 rounded-lg border bg-white p-4 sm:grid-cols-4">
+    <main className="mx-auto max-w-6xl space-y-6 px-4 py-6">
+      <section className="grid gap-4 rounded-lg border bg-white p-4 sm:grid-cols-4">
           <div>
             <label className="text-xs font-medium text-gray-500">Année</label>
             <select
@@ -407,6 +391,55 @@ export default function NotesForm({
             </p>
           )}
         </section>
+
+        {classId && (
+          <section className="no-print rounded-lg border bg-white p-4">
+            <p className="mb-3 text-xs font-medium uppercase text-indigo-500">Élèves de la classe</p>
+            {studentsForClass.length === 0 ? (
+              <p className="text-sm text-gray-400">Aucun élève dans cette classe.</p>
+            ) : (
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => rotateStudent(-1)}
+                  aria-label="Élève précédent"
+                  className="shrink-0 rounded-full border p-2 text-lg leading-none text-gray-500 hover:bg-indigo-50 hover:text-indigo-600"
+                >
+                  ‹
+                </button>
+                <div className="flex flex-1 gap-2 overflow-x-auto py-1">
+                  {studentsForClass.map((s) => {
+                    const done = encodingsByKey.has(`${s.id}__${period}`);
+                    const active = s.id === studentId;
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => setStudentId(s.id)}
+                        className={`flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition ${
+                          active
+                            ? "border-indigo-500 bg-indigo-100 font-medium text-indigo-900"
+                            : "border-gray-200 hover:bg-gray-50"
+                        }`}
+                      >
+                        <span className={`h-2 w-2 rounded-full ${done ? "bg-green-500" : "bg-gray-300"}`} />
+                        {s.last_name} {s.first_name}
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => rotateStudent(1)}
+                  aria-label="Élève suivant"
+                  className="shrink-0 rounded-full border p-2 text-lg leading-none text-gray-500 hover:bg-indigo-50 hover:text-indigo-600"
+                >
+                  ›
+                </button>
+              </div>
+            )}
+          </section>
+        )}
 
         {student && degree && (
           <>
@@ -653,7 +686,6 @@ export default function NotesForm({
             </div>
           </>
         )}
-      </div>
     </main>
   );
 }
