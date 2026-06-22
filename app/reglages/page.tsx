@@ -1,7 +1,9 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import ReglagesClient from "./ReglagesClient";
 import type {
   Competency,
+  Profile,
   ResourcePerson,
   SchoolClass,
   Student,
@@ -12,6 +14,16 @@ import type {
 
 export default async function ReglagesPage() {
   const supabase = createClient();
+
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) redirect("/login");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", userData.user.id)
+    .single<Profile>();
+  if (!profile?.is_admin) redirect("/notes");
 
   const [
     { data: classes },

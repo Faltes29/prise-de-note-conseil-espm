@@ -18,6 +18,7 @@ export type TaItemKey = (typeof TA_ITEMS)[number]["key"];
 export interface Profile {
   id: string;
   full_name: string;
+  is_admin: boolean;
   created_at: string;
 }
 
@@ -84,6 +85,7 @@ export interface StudentEncoding {
   freins: string | null;
   forces: string | null;
   conseils: string | null;
+  remarques: string | null;
   suivi_necessaire: boolean;
   suivi_raisons: string | null;
   suivi_contact_1: string | null;

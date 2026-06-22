@@ -94,7 +94,8 @@ on conflict (label) do nothing;
 -- Balises disponibles : {{prenom}} {{nom}} {{il_elle}} {{son_sa}} {{le_la}}
 -- {{matieres_echec}} {{matieres_difficulte}} {{matieres_ne}} {{competences}}
 -- {{ta_forces}} {{ta_faiblesses}} {{ta_manuel}} {{freins}} {{forces}}
--- {{conseils}} {{suivi}} — et blocs conditionnels {{#if variable}}...{{/if}}
+-- {{conseils}} {{remarques}} {{suivi}} — et blocs conditionnels
+-- {{#if variable}}...{{/if}}
 
 insert into public.templates (cas, degree, period, body)
 select 1, d, p,
