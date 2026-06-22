@@ -1,0 +1,45 @@
+import { createClient } from "@/lib/supabase/server";
+import ReglagesClient from "./ReglagesClient";
+import type {
+  Competency,
+  ResourcePerson,
+  SchoolClass,
+  Student,
+  Subject,
+  TaskStatus,
+  Template,
+} from "@/types/database";
+
+export default async function ReglagesPage() {
+  const supabase = createClient();
+
+  const [
+    { data: classes },
+    { data: students },
+    { data: subjects },
+    { data: competencies },
+    { data: resourcePersons },
+    { data: taskStatuses },
+    { data: templates },
+  ] = await Promise.all([
+    supabase.from("classes").select("*").order("year").order("name"),
+    supabase.from("students").select("*").order("last_name"),
+    supabase.from("subjects").select("*").order("position"),
+    supabase.from("competencies").select("*").order("position"),
+    supabase.from("resource_persons").select("*").order("position"),
+    supabase.from("task_statuses").select("*").order("position"),
+    supabase.from("templates").select("*"),
+  ]);
+
+  return (
+    <ReglagesClient
+      classes={(classes ?? []) as SchoolClass[]}
+      students={(students ?? []) as Student[]}
+      subjects={(subjects ?? []) as Subject[]}
+      competencies={(competencies ?? []) as Competency[]}
+      resourcePersons={(resourcePersons ?? []) as ResourcePerson[]}
+      taskStatuses={(taskStatuses ?? []) as TaskStatus[]}
+      templates={(templates ?? []) as Template[]}
+    />
+  );
+}

@@ -16,21 +16,23 @@ export default async function NavBar() {
 
   return (
     <header className="no-print border-b bg-white">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         <nav className="flex items-center gap-4 text-sm">
-          <Link href="/dashboard" className="font-semibold">
-            Conseil de classe
+          <Link href="/notes" className="font-semibold">
+            Bulletin ESPM
           </Link>
-          {(profile?.role === "direction" || profile?.role === "admin") && (
-            <Link href="/admin" className="text-gray-600 hover:text-primary">
-              Administration
-            </Link>
-          )}
+          <Link href="/notes" className="text-gray-600 hover:text-primary">
+            Prise de notes
+          </Link>
+          <Link href="/eleves" className="text-gray-600 hover:text-primary">
+            Élèves
+          </Link>
+          <Link href="/reglages" className="text-gray-600 hover:text-primary">
+            Réglages
+          </Link>
         </nav>
         <div className="flex items-center gap-3 text-sm text-gray-600">
-          <span>
-            {profile?.full_name} ({profile?.role})
-          </span>
+          <span>{profile?.full_name}</span>
           <form action={signOut}>
             <button className="rounded border px-2 py-1 text-xs hover:bg-gray-50">
               Déconnexion

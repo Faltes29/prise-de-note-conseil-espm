@@ -25,7 +25,7 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/dashboard");
+    router.push("/notes");
     router.refresh();
   }
 
@@ -35,7 +35,7 @@ export default function LoginPage() {
         onSubmit={handleSubmit}
         className="w-full max-w-sm space-y-4 rounded-lg border bg-white p-8 shadow-sm"
       >
-        <h1 className="text-xl font-semibold">Conseil de classe</h1>
+        <h1 className="text-xl font-semibold">Bulletin ESPM</h1>
         <p className="text-sm text-gray-500">Connectez-vous avec votre compte enseignant.</p>
 
         <div className="space-y-1">
