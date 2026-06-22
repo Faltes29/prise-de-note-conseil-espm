@@ -6,10 +6,6 @@
 -- ---------------------------------------------------------------------------
 
 drop trigger if exists on_auth_user_created on auth.users;
-drop function if exists public.handle_new_user();
-drop function if exists public.can_view_class(uuid);
-drop function if exists public.is_assigned_to_class(uuid);
-drop function if exists public.current_role_is(text[]);
 
 drop table if exists public.votes;
 drop table if exists public.decisions;
@@ -20,6 +16,11 @@ drop table if exists public.students;
 drop table if exists public.classes;
 drop table if exists public.subjects;
 drop table if exists public.profiles;
+
+drop function if exists public.handle_new_user();
+drop function if exists public.can_view_class(uuid);
+drop function if exists public.is_assigned_to_class(uuid);
+drop function if exists public.current_role_is(text[]);
 
 -- ---------------------------------------------------------------------------
 -- Tables
