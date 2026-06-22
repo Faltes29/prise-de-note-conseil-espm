@@ -42,6 +42,15 @@ function parseYear(value: string): number {
   return match ? Number(match[0]) : 0;
 }
 
+// La grille horaire encode l'année d'études en tête du nom de classe
+// (ex: "1A", "5C") ; la colonne "Année scolaire" contient souvent
+// l'année calendaire ("2025-2026"), pas l'année d'études.
+function yearFromClassName(className: string): number {
+  const match = className.match(/^\d+/);
+  const year = match ? Number(match[0]) : 0;
+  return year >= 1 && year <= 6 ? year : 0;
+}
+
 export function parseStudentsCsv(text: string): ImportStudentRow[] {
   const cleanText = text.replace(/^﻿/, "");
   const lines = cleanText.split(/\r?\n/).filter((line) => line.trim().length > 0);
@@ -50,7 +59,7 @@ export function parseStudentsCsv(text: string): ImportStudentRow[] {
   const headers = parseCsvLine(lines[0]).map((h) => h.trim().toLowerCase());
   const indexOf = (...names: string[]) => headers.findIndex((h) => names.includes(h));
 
-  const idxClasse = indexOf("classe");
+  const idxClasse = indexOf("classe", "nom de classe");
   const idxNom = indexOf("nom famille", "nom");
   const idxPrenom = indexOf("prénom", "prenom");
   const idxSexe = indexOf("sexe");
@@ -64,7 +73,7 @@ export function parseStudentsCsv(text: string): ImportStudentRow[] {
     const firstName = idxPrenom >= 0 ? cells[idxPrenom] : "";
     const className = idxClasse >= 0 ? cells[idxClasse] : "";
     const sexe = idxSexe >= 0 ? normalizeSexe(cells[idxSexe] ?? "") : "X";
-    const year = idxAnnee >= 0 ? parseYear(cells[idxAnnee] ?? "") : 0;
+    const year = yearFromClassName(className) || (idxAnnee >= 0 ? parseYear(cells[idxAnnee] ?? "") : 0);
 
     if (!lastName || !firstName || !className || !year) continue;
 
