@@ -43,7 +43,8 @@ function parseYear(value: string): number {
 }
 
 export function parseStudentsCsv(text: string): ImportStudentRow[] {
-  const lines = text.split(/\r?\n/).filter((line) => line.trim().length > 0);
+  const cleanText = text.replace(/^﻿/, "");
+  const lines = cleanText.split(/\r?\n/).filter((line) => line.trim().length > 0);
   if (lines.length < 2) return [];
 
   const headers = parseCsvLine(lines[0]).map((h) => h.trim().toLowerCase());
