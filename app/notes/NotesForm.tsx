@@ -40,6 +40,7 @@ interface FormState {
   freins: string;
   forces: string;
   conseils: string;
+  remarques: string;
   suiviNecessaire: boolean;
   suiviRaisons: string;
   suiviContact1: string;
@@ -57,6 +58,7 @@ function defaultFormState(): FormState {
     freins: "",
     forces: "",
     conseils: "",
+    remarques: "",
     suiviNecessaire: false,
     suiviRaisons: "",
     suiviContact1: "",
@@ -75,6 +77,7 @@ function encodingToFormState(encoding: StudentEncoding): FormState {
     freins: encoding.freins ?? "",
     forces: encoding.forces ?? "",
     conseils: encoding.conseils ?? "",
+    remarques: encoding.remarques ?? "",
     suiviNecessaire: encoding.suivi_necessaire,
     suiviRaisons: encoding.suivi_raisons ?? "",
     suiviContact1: encoding.suivi_contact_1 ?? "",
@@ -232,6 +235,7 @@ export default function NotesForm({
       freins: form.freins,
       forces: form.forces,
       conseils: form.conseils,
+      remarques: form.remarques,
       suivi,
     };
 
@@ -243,8 +247,8 @@ export default function NotesForm({
     [generatedComment, genre]
   );
 
-  async function handleSave() {
-    if (!studentId) return;
+  async function persistEncoding(): Promise<boolean> {
+    if (!studentId) return true;
     setSaving(true);
     try {
       await saveEncoding({
@@ -258,6 +262,7 @@ export default function NotesForm({
         freins: form.freins || null,
         forces: form.forces || null,
         conseils: form.conseils || null,
+        remarques: form.remarques || null,
         suiviNecessaire: form.suiviNecessaire,
         suiviRaisons: form.suiviRaisons || null,
         suiviContact1: form.suiviContact1 || null,
@@ -266,20 +271,29 @@ export default function NotesForm({
         generatedComment: generatedComment || null,
       });
       setSavedMessage("Enregistré ✓");
+      return true;
+    } catch (err) {
+      setSavedMessage(null);
+      alert(err instanceof Error ? err.message : "Erreur lors de l'enregistrement.");
+      return false;
     } finally {
       setSaving(false);
     }
   }
 
+  async function handleSave() {
+    await persistEncoding();
+  }
+
   async function handleNext() {
-    await handleSave();
+    await persistEncoding();
     const idx = studentsForClass.findIndex((s) => s.id === studentId);
     const next = studentsForClass[idx + 1];
     if (next) setStudentId(next.id);
   }
 
   async function handlePrevious() {
-    await handleSave();
+    await persistEncoding();
     const idx = studentsForClass.findIndex((s) => s.id === studentId);
     const prev = studentsForClass[idx - 1];
     if (prev) setStudentId(prev.id);
@@ -292,15 +306,15 @@ export default function NotesForm({
   return (
     <main className="mx-auto max-w-6xl gap-6 px-4 py-6 lg:flex">
       <aside className="no-print mb-6 w-full shrink-0 space-y-1 lg:mb-0 lg:w-48">
-        <p className="mb-2 text-xs font-medium uppercase text-gray-500">Élèves de la classe</p>
+        <p className="mb-2 text-xs font-medium uppercase text-indigo-500">Élèves de la classe</p>
         {studentsForClass.map((s) => {
           const done = encodingsByKey.has(`${s.id}__${period}`);
           return (
             <button
               key={s.id}
               onClick={() => setStudentId(s.id)}
-              className={`flex w-full items-center gap-2 rounded px-2 py-1 text-left text-sm hover:bg-gray-100 ${
-                s.id === studentId ? "bg-gray-100 font-medium" : ""
+              className={`flex w-full items-center gap-2 rounded px-2 py-1 text-left text-sm hover:bg-indigo-50 ${
+                s.id === studentId ? "bg-indigo-100 font-medium text-indigo-900" : ""
               }`}
             >
               <span className={`h-2 w-2 rounded-full ${done ? "bg-green-500" : "bg-gray-300"}`} />
@@ -396,8 +410,8 @@ export default function NotesForm({
 
         {student && degree && (
           <>
-            <section className="rounded-lg border bg-white p-4">
-              <h2 className="mb-3 text-sm font-semibold">Matières ({degree})</h2>
+            <section className="rounded-lg border border-l-4 border-l-sky-400 bg-white p-4">
+              <h2 className="mb-3 text-sm font-semibold text-sky-700">Matières ({degree})</h2>
               <div className="space-y-2">
                 {subjectsForDegree.map((subject) => (
                   <div key={subject.id} className="flex items-center justify-between gap-3 text-sm">
@@ -419,8 +433,8 @@ export default function NotesForm({
               </div>
             </section>
 
-            <section className="rounded-lg border bg-white p-4">
-              <h2 className="mb-3 text-sm font-semibold">Compétences transversales</h2>
+            <section className="rounded-lg border border-l-4 border-l-emerald-400 bg-white p-4">
+              <h2 className="mb-3 text-sm font-semibold text-emerald-700">Compétences transversales</h2>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {competenciesForDegree.map((c) => (
                   <label key={c.id} className="flex items-center gap-2 text-sm">
@@ -435,8 +449,8 @@ export default function NotesForm({
               </div>
             </section>
 
-            <section className="rounded-lg border bg-white p-4">
-              <h2 className="mb-3 text-sm font-semibold">Travail autonome (TA)</h2>
+            <section className="rounded-lg border border-l-4 border-l-amber-400 bg-white p-4">
+              <h2 className="mb-3 text-sm font-semibold text-amber-700">Travail autonome (TA)</h2>
               <div className="space-y-2">
                 {TA_ITEMS.map((item) => (
                   <div key={item.key} className="flex items-center justify-between gap-3 text-sm">
@@ -467,7 +481,7 @@ export default function NotesForm({
               />
             </section>
 
-            <section className="rounded-lg border bg-white p-4">
+            <section className="rounded-lg border border-l-4 border-l-violet-400 bg-white p-4">
               <label className="text-xs font-medium text-gray-500">Cas (gravité)</label>
               <select
                 className="mt-1 w-full rounded border px-2 py-1.5 text-sm"
@@ -482,7 +496,7 @@ export default function NotesForm({
               </select>
             </section>
 
-            <section className="grid gap-4 rounded-lg border bg-white p-4 sm:grid-cols-3">
+            <section className="grid gap-4 rounded-lg border border-l-4 border-l-rose-400 bg-white p-4 sm:grid-cols-3">
               <div>
                 <label className="text-xs font-medium text-gray-500">Freins</label>
                 <textarea
@@ -512,7 +526,17 @@ export default function NotesForm({
               </div>
             </section>
 
-            <section className="rounded-lg border bg-white p-4">
+            <section className="rounded-lg border border-l-4 border-l-teal-400 bg-white p-4">
+              <label className="text-xs font-medium text-gray-500">Remarques supplémentaires</label>
+              <textarea
+                className="mt-1 w-full rounded border px-2 py-1.5 text-sm"
+                rows={3}
+                value={form.remarques}
+                onChange={(e) => setForm((prev) => ({ ...prev, remarques: e.target.value }))}
+              />
+            </section>
+
+            <section className="rounded-lg border border-l-4 border-l-orange-400 bg-white p-4">
               <label className="flex items-center gap-2 text-sm font-semibold">
                 <input
                   type="checkbox"
@@ -573,10 +597,10 @@ export default function NotesForm({
               </div>
             </section>
 
-            <section className="grid gap-4 rounded-lg border bg-white p-4 lg:grid-cols-2">
+            <section className="grid gap-4 rounded-lg border border-l-4 border-l-primary bg-white p-4 lg:grid-cols-2">
               <div>
                 <div className="mb-2 flex items-center justify-between">
-                  <h2 className="text-sm font-semibold">Commentaire (bulletin)</h2>
+                  <h2 className="text-sm font-semibold text-primary">Commentaire (bulletin)</h2>
                   <button
                     onClick={() => copyToClipboard(generatedComment)}
                     className="rounded border px-2 py-1 text-xs hover:bg-gray-50"

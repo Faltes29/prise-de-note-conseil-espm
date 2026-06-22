@@ -117,13 +117,13 @@ export default function EleveTable({
 
       <table className="w-full border-collapse text-sm">
         <thead>
-          <tr className="border-b text-left text-xs uppercase text-gray-500">
-            <th className="py-2">Élève</th>
-            <th className="py-2">Classe</th>
-            <th className="py-2">Cas</th>
-            <th className="py-2">Échecs</th>
-            <th className="py-2">Statut</th>
-            <th className="py-2">Suivi</th>
+          <tr className="border-b bg-indigo-50 text-left text-xs uppercase text-indigo-600">
+            <th className="py-2 px-2">Élève</th>
+            <th className="py-2 px-2">Classe</th>
+            <th className="py-2 px-2">Cas</th>
+            <th className="py-2 px-2">Échecs</th>
+            <th className="py-2 px-2">Statut</th>
+            <th className="py-2 px-2">Suivi</th>
           </tr>
         </thead>
         <tbody>
@@ -136,16 +136,35 @@ export default function EleveTable({
                     .map(([subjectId]) => subjectNameById.get(subjectId) ?? "")
                 )
               : "";
+            const casColors: Record<number, string> = {
+              1: "bg-green-100 text-green-700",
+              2: "bg-amber-100 text-amber-700",
+              3: "bg-red-100 text-red-700",
+            };
             return (
-              <tr key={s.id} className="border-b">
-                <td className="py-2">
+              <tr key={s.id} className="border-b hover:bg-gray-50">
+                <td className="py-2 px-2">
                   {s.last_name} {s.first_name}
                 </td>
-                <td className="py-2">{classLabel(s.class_id)}</td>
-                <td className="py-2">{enc ? `Cas ${enc.cas}` : "—"}</td>
-                <td className="py-2">{echecs || "—"}</td>
-                <td className="py-2">{enc?.status_id ? statusLabelById.get(enc.status_id) ?? "—" : "—"}</td>
-                <td className="py-2">{enc?.suivi_necessaire ? "Oui" : "—"}</td>
+                <td className="py-2 px-2">{classLabel(s.class_id)}</td>
+                <td className="py-2 px-2">
+                  {enc ? (
+                    <span className={`rounded px-2 py-0.5 text-xs font-medium ${casColors[enc.cas]}`}>
+                      Cas {enc.cas}
+                    </span>
+                  ) : (
+                    "—"
+                  )}
+                </td>
+                <td className="py-2 px-2">{echecs || "—"}</td>
+                <td className="py-2 px-2">{enc?.status_id ? statusLabelById.get(enc.status_id) ?? "—" : "—"}</td>
+                <td className="py-2 px-2">
+                  {enc?.suivi_necessaire ? (
+                    <span className="rounded bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">Oui</span>
+                  ) : (
+                    "—"
+                  )}
+                </td>
               </tr>
             );
           })}

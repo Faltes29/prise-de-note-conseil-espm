@@ -11,6 +11,13 @@ async function requireUser() {
   return { supabase, userId: data.user.id };
 }
 
+async function requireAdmin() {
+  const { supabase, userId } = await requireUser();
+  const { data: profile } = await supabase.from("profiles").select("is_admin").eq("id", userId).single();
+  if (!profile?.is_admin) throw new Error("Réservé aux administrateurs");
+  return { supabase, userId };
+}
+
 export async function signOut() {
   const { supabase } = await requireUser();
   await supabase.auth.signOut();
@@ -30,6 +37,7 @@ export async function saveEncoding(params: {
   freins: string | null;
   forces: string | null;
   conseils: string | null;
+  remarques: string | null;
   suiviNecessaire: boolean;
   suiviRaisons: string | null;
   suiviContact1: string | null;
@@ -50,6 +58,7 @@ export async function saveEncoding(params: {
       freins: params.freins,
       forces: params.forces,
       conseils: params.conseils,
+      remarques: params.remarques,
       suivi_necessaire: params.suiviNecessaire,
       suivi_raisons: params.suiviRaisons,
       suivi_contact_1: params.suiviContact1,
@@ -68,7 +77,7 @@ export async function saveEncoding(params: {
 // --- Classes -----------------------------------------------------------------
 
 export async function createClass(name: string, year: number) {
-  const { supabase } = await requireUser();
+  const { supabase } = await requireAdmin();
   const { error } = await supabase.from("classes").insert({ name, year });
   if (error) throw new Error(error.message);
   revalidatePath("/reglages");
@@ -76,7 +85,7 @@ export async function createClass(name: string, year: number) {
 }
 
 export async function deleteClass(id: string) {
-  const { supabase } = await requireUser();
+  const { supabase } = await requireAdmin();
   const { error } = await supabase.from("classes").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/reglages");
@@ -86,7 +95,7 @@ export async function deleteClass(id: string) {
 // --- Élèves ------------------------------------------------------------------
 
 export async function addStudent(classId: string, lastName: string, firstName: string, sexe: Sexe) {
-  const { supabase } = await requireUser();
+  const { supabase } = await requireAdmin();
   const { error } = await supabase.from("students").upsert(
     {
       class_id: classId,
@@ -103,7 +112,7 @@ export async function addStudent(classId: string, lastName: string, firstName: s
 }
 
 export async function deleteStudent(id: string) {
-  const { supabase } = await requireUser();
+  const { supabase } = await requireAdmin();
   const { error } = await supabase.from("students").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/reglages");
@@ -119,7 +128,7 @@ export interface ImportStudentRow {
 }
 
 export async function importStudents(rows: ImportStudentRow[]) {
-  const { supabase } = await requireUser();
+  const { supabase } = await requireAdmin();
 
   const uniqueClasses = new Map<string, { name: string; year: number }>();
   for (const row of rows) {
@@ -171,7 +180,7 @@ export async function importStudents(rows: ImportStudentRow[]) {
 // --- Matières ------------------------------------------------------------------
 
 export async function createSubject(degree: Degree, name: string) {
-  const { supabase } = await requireUser();
+  const { supabase } = await requireAdmin();
   const { error } = await supabase.from("subjects").insert({ degree, name });
   if (error) throw new Error(error.message);
   revalidatePath("/reglages");
@@ -179,7 +188,7 @@ export async function createSubject(degree: Degree, name: string) {
 }
 
 export async function deleteSubject(id: string) {
-  const { supabase } = await requireUser();
+  const { supabase } = await requireAdmin();
   const { error } = await supabase.from("subjects").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/reglages");
@@ -189,7 +198,7 @@ export async function deleteSubject(id: string) {
 // --- Compétences transversales ------------------------------------------------
 
 export async function createCompetency(degree: Degree, name: string) {
-  const { supabase } = await requireUser();
+  const { supabase } = await requireAdmin();
   const { error } = await supabase.from("competencies").insert({ degree, name });
   if (error) throw new Error(error.message);
   revalidatePath("/reglages");
@@ -197,7 +206,7 @@ export async function createCompetency(degree: Degree, name: string) {
 }
 
 export async function deleteCompetency(id: string) {
-  const { supabase } = await requireUser();
+  const { supabase } = await requireAdmin();
   const { error } = await supabase.from("competencies").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/reglages");
@@ -207,7 +216,7 @@ export async function deleteCompetency(id: string) {
 // --- Personnes ressources ------------------------------------------------------
 
 export async function createResourcePerson(name: string) {
-  const { supabase } = await requireUser();
+  const { supabase } = await requireAdmin();
   const { error } = await supabase.from("resource_persons").insert({ name });
   if (error) throw new Error(error.message);
   revalidatePath("/reglages");
@@ -215,7 +224,7 @@ export async function createResourcePerson(name: string) {
 }
 
 export async function deleteResourcePerson(id: string) {
-  const { supabase } = await requireUser();
+  const { supabase } = await requireAdmin();
   const { error } = await supabase.from("resource_persons").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/reglages");
@@ -225,7 +234,7 @@ export async function deleteResourcePerson(id: string) {
 // --- Statuts de tâche -----------------------------------------------------------
 
 export async function createTaskStatus(label: string) {
-  const { supabase } = await requireUser();
+  const { supabase } = await requireAdmin();
   const { error } = await supabase.from("task_statuses").insert({ label });
   if (error) throw new Error(error.message);
   revalidatePath("/reglages");
@@ -233,7 +242,7 @@ export async function createTaskStatus(label: string) {
 }
 
 export async function deleteTaskStatus(id: string) {
-  const { supabase } = await requireUser();
+  const { supabase } = await requireAdmin();
   const { error } = await supabase.from("task_statuses").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/reglages");
@@ -243,7 +252,7 @@ export async function deleteTaskStatus(id: string) {
 // --- Templates ------------------------------------------------------------------
 
 export async function upsertTemplate(cas: Cas, degree: Degree, period: Period, body: string) {
-  const { supabase } = await requireUser();
+  const { supabase } = await requireAdmin();
   const { error } = await supabase
     .from("templates")
     .upsert({ cas, degree, period, body }, { onConflict: "cas,degree,period" });
