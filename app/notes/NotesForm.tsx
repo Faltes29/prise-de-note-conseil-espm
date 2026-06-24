@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { saveEncoding } from "@/app/actions";
 import { renderTemplate, buildAiPrompt, joinWithEt } from "@/lib/template";
 import {
@@ -105,6 +106,7 @@ export default function NotesForm({
   templates: Template[];
   encodings: StudentEncoding[];
 }) {
+  const searchParams = useSearchParams();
   const [year, setYear] = useState<number | null>(null);
   const [classId, setClassId] = useState<string>("");
   const [studentId, setStudentId] = useState<string>("");
@@ -112,6 +114,25 @@ export default function NotesForm({
   const [form, setForm] = useState<FormState>(defaultFormState());
   const [saving, setSaving] = useState(false);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
+  const [toastVisible, setToastVisible] = useState(false);
+  const skipNextAutosaveRef = useRef(true);
+
+  // Pré-sélection via lien profond (?studentId=&period=), ex. depuis la page Données encodées.
+  useEffect(() => {
+    const sid = searchParams.get("studentId");
+    const p = searchParams.get("period");
+    if (sid) {
+      const target = students.find((s) => s.id === sid);
+      if (target) {
+        const cls = classes.find((c) => c.id === target.class_id);
+        if (cls) setYear(cls.year);
+        setClassId(target.class_id);
+        setStudentId(sid);
+      }
+    }
+    if (p && PERIODS.includes(p as Period)) setPeriod(p as Period);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const encodingsByKey = useMemo(() => {
     const map = new Map<string, StudentEncoding>();
@@ -133,14 +154,35 @@ export default function NotesForm({
 
   const degree = year ? degreeForYear(year) : null;
 
-  const subjectsForDegree = useMemo(
-    () => (degree ? subjects.filter((s) => s.degree === degree) : []),
-    [subjects, degree]
+  const subjectsForYear = useMemo(
+    () => (year ? subjects.filter((s) => s.year === year) : []),
+    [subjects, year]
   );
 
-  const competenciesForDegree = useMemo(
-    () => (degree ? competencies.filter((c) => c.degree === degree) : []),
-    [competencies, degree]
+  const competenciesForYear = useMemo(
+    () => (year ? competencies.filter((c) => c.year === year) : []),
+    [competencies, year]
+  );
+
+  const sortedSubjectsForYear = useMemo(
+    () =>
+      [...subjectsForYear].sort(
+        (a, b) => (form.subjectStatus[a.id] ? 0 : 1) - (form.subjectStatus[b.id] ? 0 : 1)
+      ),
+    [subjectsForYear, form.subjectStatus]
+  );
+
+  const sortedCompetenciesForYear = useMemo(
+    () =>
+      [...competenciesForYear].sort(
+        (a, b) => (form.competencies[a.id] ? 0 : 1) - (form.competencies[b.id] ? 0 : 1)
+      ),
+    [competenciesForYear, form.competencies]
+  );
+
+  const sortedTaItems = useMemo(
+    () => [...TA_ITEMS].sort((a, b) => (form.taStatus[a.key] ? 0 : 1) - (form.taStatus[b.key] ? 0 : 1)),
+    [form.taStatus]
   );
 
   // Charge l'encodage existant (ou réinitialise) quand l'élève ou la période change.
@@ -152,7 +194,27 @@ export default function NotesForm({
     const existing = encodingsByKey.get(`${studentId}__${period}`);
     setForm(existing ? encodingToFormState(existing) : defaultFormState());
     setSavedMessage(null);
+    skipNextAutosaveRef.current = true;
   }, [studentId, period, encodingsByKey]);
+
+  // Enregistrement automatique après une courte inactivité, sauf juste après le chargement d'un élève/période.
+  useEffect(() => {
+    if (skipNextAutosaveRef.current) {
+      skipNextAutosaveRef.current = false;
+      return;
+    }
+    if (!studentId) return;
+    const timer = setTimeout(() => {
+      persistEncoding();
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [form, studentId]);
+
+  useEffect(() => {
+    if (!toastVisible) return;
+    const timer = setTimeout(() => setToastVisible(false), 2500);
+    return () => clearTimeout(timer);
+  }, [toastVisible]);
 
   function toggleSubjectStatus(subjectId: string, status: SubjectStatus) {
     setForm((prev) => {
@@ -202,11 +264,11 @@ export default function NotesForm({
 
     const subjectNames = (status: SubjectStatus) =>
       joinWithEt(
-        subjectsForDegree.filter((s) => form.subjectStatus[s.id] === status).map((s) => s.name)
+        subjectsForYear.filter((s) => form.subjectStatus[s.id] === status).map((s) => s.name)
       );
 
     const competenceNames = joinWithEt(
-      competenciesForDegree.filter((c) => form.competencies[c.id]).map((c) => c.name)
+      competenciesForYear.filter((c) => form.competencies[c.id]).map((c) => c.name)
     );
 
     const taNames = (status: TaStatus) =>
@@ -240,7 +302,7 @@ export default function NotesForm({
     };
 
     return renderTemplate(template.body, vars);
-  }, [student, template, form, subjectsForDegree, competenciesForDegree, resourcePersons, pronouns]);
+  }, [student, template, form, subjectsForYear, competenciesForYear, resourcePersons, pronouns]);
 
   const aiPrompt = useMemo(
     () => (generatedComment ? buildAiPrompt(generatedComment, genre ?? "Non-défini") : ""),
@@ -271,9 +333,11 @@ export default function NotesForm({
         generatedComment: generatedComment || null,
       });
       setSavedMessage("Enregistré ✓");
+      setToastVisible(true);
       return true;
     } catch (err) {
       setSavedMessage(null);
+      setToastVisible(false);
       alert(err instanceof Error ? err.message : "Erreur lors de l'enregistrement.");
       return false;
     } finally {
@@ -299,36 +363,20 @@ export default function NotesForm({
     if (prev) setStudentId(prev.id);
   }
 
+  function rotateStudent(direction: 1 | -1) {
+    if (studentsForClass.length === 0) return;
+    const idx = studentsForClass.findIndex((s) => s.id === studentId);
+    const nextIdx = idx === -1 ? 0 : (idx + direction + studentsForClass.length) % studentsForClass.length;
+    setStudentId(studentsForClass[nextIdx].id);
+  }
+
   function copyToClipboard(text: string) {
     navigator.clipboard.writeText(text);
   }
 
   return (
-    <main className="mx-auto max-w-6xl gap-6 px-4 py-6 lg:flex">
-      <aside className="no-print mb-6 w-full shrink-0 space-y-1 lg:mb-0 lg:w-48">
-        <p className="mb-2 text-xs font-medium uppercase text-indigo-500">Élèves de la classe</p>
-        {studentsForClass.map((s) => {
-          const done = encodingsByKey.has(`${s.id}__${period}`);
-          return (
-            <button
-              key={s.id}
-              onClick={() => setStudentId(s.id)}
-              className={`flex w-full items-center gap-2 rounded px-2 py-1 text-left text-sm hover:bg-indigo-50 ${
-                s.id === studentId ? "bg-indigo-100 font-medium text-indigo-900" : ""
-              }`}
-            >
-              <span className={`h-2 w-2 rounded-full ${done ? "bg-green-500" : "bg-gray-300"}`} />
-              {s.last_name} {s.first_name}
-            </button>
-          );
-        })}
-        {classId && studentsForClass.length === 0 && (
-          <p className="text-sm text-gray-400">Aucun élève dans cette classe.</p>
-        )}
-      </aside>
-
-      <div className="flex-1 space-y-6">
-        <section className="grid gap-4 rounded-lg border bg-white p-4 sm:grid-cols-4">
+    <main className="mx-auto max-w-6xl space-y-6 px-4 py-6">
+      <section className="grid gap-4 rounded-lg border bg-white p-4 sm:grid-cols-4">
           <div>
             <label className="text-xs font-medium text-gray-500">Année</label>
             <select
@@ -408,67 +456,150 @@ export default function NotesForm({
           )}
         </section>
 
+        {classId && (
+          <section className="no-print rounded-lg border bg-white p-4">
+            <p className="mb-3 text-xs font-medium uppercase text-indigo-500">Élèves de la classe</p>
+            {studentsForClass.length === 0 ? (
+              <p className="text-sm text-gray-400">Aucun élève dans cette classe.</p>
+            ) : (
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => rotateStudent(-1)}
+                  aria-label="Élève précédent"
+                  className="shrink-0 rounded-full border p-2 text-lg leading-none text-gray-500 hover:bg-indigo-50 hover:text-indigo-600"
+                >
+                  ‹
+                </button>
+                <div className="flex flex-1 gap-2 overflow-x-auto py-1">
+                  {studentsForClass.map((s) => {
+                    const done = encodingsByKey.has(`${s.id}__${period}`);
+                    const active = s.id === studentId;
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => setStudentId(s.id)}
+                        className={`flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition ${
+                          active
+                            ? "border-indigo-500 bg-indigo-100 font-medium text-indigo-900"
+                            : "border-gray-200 hover:bg-gray-50"
+                        }`}
+                      >
+                        <span className={`h-2 w-2 rounded-full ${done ? "bg-green-500" : "bg-gray-300"}`} />
+                        {s.last_name} {s.first_name}
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => rotateStudent(1)}
+                  aria-label="Élève suivant"
+                  className="shrink-0 rounded-full border p-2 text-lg leading-none text-gray-500 hover:bg-indigo-50 hover:text-indigo-600"
+                >
+                  ›
+                </button>
+              </div>
+            )}
+          </section>
+        )}
+
         {student && degree && (
           <>
             <section className="rounded-lg border border-l-4 border-l-sky-400 bg-white p-4">
-              <h2 className="mb-3 text-sm font-semibold text-sky-700">Matières ({degree})</h2>
+              <h2 className="mb-3 text-sm font-semibold text-sky-700">Matières ({year}e année)</h2>
               <div className="space-y-2">
-                {subjectsForDegree.map((subject) => (
-                  <div key={subject.id} className="flex items-center justify-between gap-3 text-sm">
-                    <span>{subject.name}</span>
-                    <div className="flex gap-3">
-                      {(["echec", "difficulte", "ne"] as SubjectStatus[]).map((status) => (
-                        <label key={status} className="flex items-center gap-1 text-xs">
-                          <input
-                            type="checkbox"
-                            checked={form.subjectStatus[subject.id] === status}
-                            onChange={() => toggleSubjectStatus(subject.id, status)}
-                          />
-                          {status === "echec" ? "Échec" : status === "difficulte" ? "Difficultés" : "NE"}
-                        </label>
-                      ))}
+                {sortedSubjectsForYear.map((subject) => {
+                  const status = form.subjectStatus[subject.id];
+                  const highlight =
+                    status === "echec"
+                      ? "border-red-200 bg-red-50"
+                      : status === "difficulte"
+                      ? "border-amber-200 bg-amber-50"
+                      : status === "ne"
+                      ? "border-gray-300 bg-gray-50"
+                      : "border-transparent";
+                  return (
+                    <div
+                      key={subject.id}
+                      className={`flex items-center justify-between gap-3 rounded border px-2 py-1.5 text-sm transition-colors ${highlight}`}
+                    >
+                      <span className={status ? "font-medium" : ""}>{subject.name}</span>
+                      <div className="flex gap-3">
+                        {(["echec", "difficulte", "ne"] as SubjectStatus[]).map((s) => (
+                          <label key={s} className="flex items-center gap-1 text-xs">
+                            <input
+                              type="checkbox"
+                              checked={status === s}
+                              onChange={() => toggleSubjectStatus(subject.id, s)}
+                            />
+                            {s === "echec" ? "Échec" : s === "difficulte" ? "Difficultés" : "NE"}
+                          </label>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </section>
 
             <section className="rounded-lg border border-l-4 border-l-emerald-400 bg-white p-4">
               <h2 className="mb-3 text-sm font-semibold text-emerald-700">Compétences transversales</h2>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {competenciesForDegree.map((c) => (
-                  <label key={c.id} className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={!!form.competencies[c.id]}
-                      onChange={() => toggleCompetency(c.id)}
-                    />
-                    {c.name}
-                  </label>
-                ))}
+                {sortedCompetenciesForYear.map((c) => {
+                  const selected = !!form.competencies[c.id];
+                  return (
+                    <label
+                      key={c.id}
+                      className={`flex items-center gap-2 rounded border px-2 py-1 text-sm transition-colors ${
+                        selected ? "border-emerald-200 bg-emerald-50 font-medium" : "border-transparent"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() => toggleCompetency(c.id)}
+                      />
+                      {c.name}
+                    </label>
+                  );
+                })}
               </div>
             </section>
 
             <section className="rounded-lg border border-l-4 border-l-amber-400 bg-white p-4">
               <h2 className="mb-3 text-sm font-semibold text-amber-700">Travail autonome (TA)</h2>
               <div className="space-y-2">
-                {TA_ITEMS.map((item) => (
-                  <div key={item.key} className="flex items-center justify-between gap-3 text-sm">
-                    <span>{item.label}</span>
-                    <div className="flex gap-3">
-                      {(["force", "faiblesse"] as TaStatus[]).map((status) => (
-                        <label key={status} className="flex items-center gap-1 text-xs">
-                          <input
-                            type="checkbox"
-                            checked={form.taStatus[item.key] === status}
-                            onChange={() => setTaStatus(item.key, status)}
-                          />
-                          {status === "force" ? "Force" : "Faiblesse"}
-                        </label>
-                      ))}
+                {sortedTaItems.map((item) => {
+                  const status = form.taStatus[item.key];
+                  const highlight =
+                    status === "force"
+                      ? "border-emerald-200 bg-emerald-50"
+                      : status === "faiblesse"
+                      ? "border-red-200 bg-red-50"
+                      : "border-transparent";
+                  return (
+                    <div
+                      key={item.key}
+                      className={`flex items-center justify-between gap-3 rounded border px-2 py-1.5 text-sm transition-colors ${highlight}`}
+                    >
+                      <span className={status ? "font-medium" : ""}>{item.label}</span>
+                      <div className="flex gap-3">
+                        {(["force", "faiblesse"] as TaStatus[]).map((s) => (
+                          <label key={s} className="flex items-center gap-1 text-xs">
+                            <input
+                              type="checkbox"
+                              checked={status === s}
+                              onChange={() => setTaStatus(item.key, s)}
+                            />
+                            {s === "force" ? "Force" : "Faiblesse"}
+                          </label>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               <label className="mt-3 block text-xs font-medium text-gray-500">
                 Si pas de consensus (texte manuel)
@@ -649,11 +780,17 @@ export default function NotesForm({
               <button onClick={handleNext} className="rounded border px-3 py-2 text-sm hover:bg-gray-50">
                 Élève suivant →
               </button>
-              {savedMessage && <span className="text-sm text-green-600">{savedMessage}</span>}
             </div>
           </>
         )}
-      </div>
+
+        <div
+          className={`no-print pointer-events-none fixed bottom-6 right-6 z-50 rounded-lg bg-gray-900/70 px-4 py-2 text-sm text-white shadow-lg backdrop-blur transition-opacity duration-300 ${
+            toastVisible ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          {savedMessage ?? "Enregistré ✓"}
+        </div>
     </main>
   );
 }

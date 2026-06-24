@@ -1,75 +1,91 @@
 -- Données par défaut pour l'outil de bulletin. Tout est modifiable ensuite
 -- depuis la page "Réglages" de l'application.
 
--- Matières par degré -------------------------------------------------------
+-- Matières par année d'études -------------------------------------------------
 
-insert into public.subjects (degree, name, position) values
-  ('D1', 'Art', 1),
-  ('D1', 'Citoyenneté', 2),
-  ('D1', 'EPS', 3),
-  ('D1', 'Français', 4),
-  ('D1', 'Mathématiques', 5),
-  ('D1', 'Néerlandais', 6),
-  ('D1', 'Sciences', 7),
-  ('D2', 'Anglais', 1),
-  ('D2', 'Biologie', 2),
-  ('D2', 'Chimie', 3),
-  ('D2', 'EPS', 4),
-  ('D2', 'Espagnol', 5),
-  ('D2', 'Français', 6),
-  ('D2', 'Géographie', 7),
-  ('D2', 'Histoire', 8),
-  ('D2', 'Mathématiques', 9),
-  ('D2', 'Néerlandais', 10),
-  ('D2', 'Physique', 11),
-  ('D3', 'Anglais', 1),
-  ('D3', 'Biologie', 2),
-  ('D3', 'Chimie', 3),
-  ('D3', 'EPS', 4),
-  ('D3', 'Espagnol', 5),
-  ('D3', 'Français', 6),
-  ('D3', 'Géographie', 7),
-  ('D3', 'Histoire', 8),
-  ('D3', 'Mathématiques', 9),
-  ('D3', 'Néerlandais', 10),
-  ('D3', 'Physique', 11)
-on conflict (degree, name) do nothing;
+insert into public.subjects (year, name, position)
+select y, name, position from unnest(array[1, 2]) y, (values
+  ('Art', 1),
+  ('Citoyenneté', 2),
+  ('EPS', 3),
+  ('Français', 4),
+  ('Mathématiques', 5),
+  ('Néerlandais', 6),
+  ('Sciences', 7)
+) as d1(name, position)
+union all
+select y, name, position from unnest(array[3, 4]) y, (values
+  ('Anglais', 1),
+  ('Biologie', 2),
+  ('Chimie', 3),
+  ('EPS', 4),
+  ('Espagnol', 5),
+  ('Français', 6),
+  ('Géographie', 7),
+  ('Histoire', 8),
+  ('Mathématiques', 9),
+  ('Néerlandais', 10),
+  ('Physique', 11)
+) as d2(name, position)
+union all
+select y, name, position from unnest(array[5, 6]) y, (values
+  ('Anglais', 1),
+  ('Biologie', 2),
+  ('Chimie', 3),
+  ('EPS', 4),
+  ('Espagnol', 5),
+  ('Français', 6),
+  ('Géographie', 7),
+  ('Histoire', 8),
+  ('Mathématiques', 9),
+  ('Néerlandais', 10),
+  ('Physique', 11)
+) as d3(name, position)
+on conflict (year, name) do nothing;
 
--- Compétences transversales par degré ---------------------------------------
+-- Compétences transversales par année d'études --------------------------------
 
-insert into public.competencies (degree, name, position) values
-  ('D1', 'Application', 1),
-  ('D1', 'Autonomie', 2),
-  ('D1', 'Communication', 3),
-  ('D1', 'Consignes', 4),
-  ('D1', 'Justification', 5),
-  ('D1', 'Recherche', 6),
-  ('D1', 'Restitution', 7),
-  ('D1', 'Sélection d''information', 8),
-  ('D1', 'Transfert', 9),
-  ('D2', 'Application', 1),
-  ('D2', 'Argumentation', 2),
-  ('D2', 'Autonomie', 3),
-  ('D2', 'Communication', 4),
-  ('D2', 'Consignes', 5),
-  ('D2', 'Justification', 6),
-  ('D2', 'Recherche', 7),
-  ('D2', 'Restitution', 8),
-  ('D2', 'Sélection d''information', 9),
-  ('D2', 'Synthèse', 10),
-  ('D2', 'Transfert', 11),
-  ('D3', 'Application', 1),
-  ('D3', 'Argumentation', 2),
-  ('D3', 'Autonomie', 3),
-  ('D3', 'Communication', 4),
-  ('D3', 'Consignes', 5),
-  ('D3', 'Justification', 6),
-  ('D3', 'Recherche', 7),
-  ('D3', 'Restitution', 8),
-  ('D3', 'Sélection d''information', 9),
-  ('D3', 'Synthèse', 10),
-  ('D3', 'Transfert', 11)
-on conflict (degree, name) do nothing;
+insert into public.competencies (year, name, position)
+select y, name, position from unnest(array[1, 2]) y, (values
+  ('Application', 1),
+  ('Autonomie', 2),
+  ('Communication', 3),
+  ('Consignes', 4),
+  ('Justification', 5),
+  ('Recherche', 6),
+  ('Restitution', 7),
+  ('Sélection d''information', 8),
+  ('Transfert', 9)
+) as d1(name, position)
+union all
+select y, name, position from unnest(array[3, 4]) y, (values
+  ('Application', 1),
+  ('Argumentation', 2),
+  ('Autonomie', 3),
+  ('Communication', 4),
+  ('Consignes', 5),
+  ('Justification', 6),
+  ('Recherche', 7),
+  ('Restitution', 8),
+  ('Sélection d''information', 9),
+  ('Synthèse', 10),
+  ('Transfert', 11)
+) as d2(name, position)
+union all
+select y, name, position from unnest(array[5, 6]) y, (values
+  ('Application', 1),
+  ('Argumentation', 2),
+  ('Autonomie', 3),
+  ('Communication', 4),
+  ('Consignes', 5),
+  ('Justification', 6),
+  ('Recherche', 7),
+  ('Restitution', 8),
+  ('Sélection d''information', 9),
+  ('Synthèse', 10),
+  ('Transfert', 11)
+) as d3(name, position)
+on conflict (year, name) do nothing;
 
 -- Personnes ressources --------------------------------------------------------
 

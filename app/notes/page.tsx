@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import NotesForm from "./NotesForm";
 import type {
@@ -35,15 +36,17 @@ export default async function NotesPage() {
   ]);
 
   return (
-    <NotesForm
-      classes={(classes ?? []) as SchoolClass[]}
-      students={(students ?? []) as Student[]}
-      subjects={(subjects ?? []) as Subject[]}
-      competencies={(competencies ?? []) as Competency[]}
-      resourcePersons={(resourcePersons ?? []) as ResourcePerson[]}
-      taskStatuses={(taskStatuses ?? []) as TaskStatus[]}
-      templates={(templates ?? []) as Template[]}
-      encodings={(encodings ?? []) as StudentEncoding[]}
-    />
+    <Suspense>
+      <NotesForm
+        classes={(classes ?? []) as SchoolClass[]}
+        students={(students ?? []) as Student[]}
+        subjects={(subjects ?? []) as Subject[]}
+        competencies={(competencies ?? []) as Competency[]}
+        resourcePersons={(resourcePersons ?? []) as ResourcePerson[]}
+        taskStatuses={(taskStatuses ?? []) as TaskStatus[]}
+        templates={(templates ?? []) as Template[]}
+        encodings={(encodings ?? []) as StudentEncoding[]}
+      />
+    </Suspense>
   );
 }

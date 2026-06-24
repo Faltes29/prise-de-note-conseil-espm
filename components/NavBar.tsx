@@ -25,7 +25,7 @@ export default async function NavBar() {
             Prise de notes
           </Link>
           <Link href="/eleves" className="text-indigo-100 hover:text-white">
-            Élèves
+            Données encodées
           </Link>
           {profile?.is_admin && (
             <Link href="/reglages" className="text-indigo-100 hover:text-white">
