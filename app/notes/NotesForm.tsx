@@ -162,6 +162,27 @@ export default function NotesForm({
     [competencies, year]
   );
 
+  const sortedSubjectsForYear = useMemo(
+    () =>
+      [...subjectsForYear].sort(
+        (a, b) => (form.subjectStatus[a.id] ? 0 : 1) - (form.subjectStatus[b.id] ? 0 : 1)
+      ),
+    [subjectsForYear, form.subjectStatus]
+  );
+
+  const sortedCompetenciesForYear = useMemo(
+    () =>
+      [...competenciesForYear].sort(
+        (a, b) => (form.competencies[a.id] ? 0 : 1) - (form.competencies[b.id] ? 0 : 1)
+      ),
+    [competenciesForYear, form.competencies]
+  );
+
+  const sortedTaItems = useMemo(
+    () => [...TA_ITEMS].sort((a, b) => (form.taStatus[a.key] ? 0 : 1) - (form.taStatus[b.key] ? 0 : 1)),
+    [form.taStatus]
+  );
+
   // Charge l'encodage existant (ou réinitialise) quand l'élève ou la période change.
   useEffect(() => {
     if (!studentId) {
@@ -465,62 +486,96 @@ export default function NotesForm({
             <section className="rounded-lg border border-l-4 border-l-sky-400 bg-white p-4">
               <h2 className="mb-3 text-sm font-semibold text-sky-700">Matières ({year}e année)</h2>
               <div className="space-y-2">
-                {subjectsForYear.map((subject) => (
-                  <div key={subject.id} className="flex items-center justify-between gap-3 text-sm">
-                    <span>{subject.name}</span>
-                    <div className="flex gap-3">
-                      {(["echec", "difficulte", "ne"] as SubjectStatus[]).map((status) => (
-                        <label key={status} className="flex items-center gap-1 text-xs">
-                          <input
-                            type="checkbox"
-                            checked={form.subjectStatus[subject.id] === status}
-                            onChange={() => toggleSubjectStatus(subject.id, status)}
-                          />
-                          {status === "echec" ? "Échec" : status === "difficulte" ? "Difficultés" : "NE"}
-                        </label>
-                      ))}
+                {sortedSubjectsForYear.map((subject) => {
+                  const status = form.subjectStatus[subject.id];
+                  const highlight =
+                    status === "echec"
+                      ? "border-red-200 bg-red-50"
+                      : status === "difficulte"
+                      ? "border-amber-200 bg-amber-50"
+                      : status === "ne"
+                      ? "border-gray-300 bg-gray-50"
+                      : "border-transparent";
+                  return (
+                    <div
+                      key={subject.id}
+                      className={`flex items-center justify-between gap-3 rounded border px-2 py-1.5 text-sm transition-colors ${highlight}`}
+                    >
+                      <span className={status ? "font-medium" : ""}>{subject.name}</span>
+                      <div className="flex gap-3">
+                        {(["echec", "difficulte", "ne"] as SubjectStatus[]).map((s) => (
+                          <label key={s} className="flex items-center gap-1 text-xs">
+                            <input
+                              type="checkbox"
+                              checked={status === s}
+                              onChange={() => toggleSubjectStatus(subject.id, s)}
+                            />
+                            {s === "echec" ? "Échec" : s === "difficulte" ? "Difficultés" : "NE"}
+                          </label>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </section>
 
             <section className="rounded-lg border border-l-4 border-l-emerald-400 bg-white p-4">
               <h2 className="mb-3 text-sm font-semibold text-emerald-700">Compétences transversales</h2>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {competenciesForYear.map((c) => (
-                  <label key={c.id} className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={!!form.competencies[c.id]}
-                      onChange={() => toggleCompetency(c.id)}
-                    />
-                    {c.name}
-                  </label>
-                ))}
+                {sortedCompetenciesForYear.map((c) => {
+                  const selected = !!form.competencies[c.id];
+                  return (
+                    <label
+                      key={c.id}
+                      className={`flex items-center gap-2 rounded border px-2 py-1 text-sm transition-colors ${
+                        selected ? "border-emerald-200 bg-emerald-50 font-medium" : "border-transparent"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() => toggleCompetency(c.id)}
+                      />
+                      {c.name}
+                    </label>
+                  );
+                })}
               </div>
             </section>
 
             <section className="rounded-lg border border-l-4 border-l-amber-400 bg-white p-4">
               <h2 className="mb-3 text-sm font-semibold text-amber-700">Travail autonome (TA)</h2>
               <div className="space-y-2">
-                {TA_ITEMS.map((item) => (
-                  <div key={item.key} className="flex items-center justify-between gap-3 text-sm">
-                    <span>{item.label}</span>
-                    <div className="flex gap-3">
-                      {(["force", "faiblesse"] as TaStatus[]).map((status) => (
-                        <label key={status} className="flex items-center gap-1 text-xs">
-                          <input
-                            type="checkbox"
-                            checked={form.taStatus[item.key] === status}
-                            onChange={() => setTaStatus(item.key, status)}
-                          />
-                          {status === "force" ? "Force" : "Faiblesse"}
-                        </label>
-                      ))}
+                {sortedTaItems.map((item) => {
+                  const status = form.taStatus[item.key];
+                  const highlight =
+                    status === "force"
+                      ? "border-emerald-200 bg-emerald-50"
+                      : status === "faiblesse"
+                      ? "border-red-200 bg-red-50"
+                      : "border-transparent";
+                  return (
+                    <div
+                      key={item.key}
+                      className={`flex items-center justify-between gap-3 rounded border px-2 py-1.5 text-sm transition-colors ${highlight}`}
+                    >
+                      <span className={status ? "font-medium" : ""}>{item.label}</span>
+                      <div className="flex gap-3">
+                        {(["force", "faiblesse"] as TaStatus[]).map((s) => (
+                          <label key={s} className="flex items-center gap-1 text-xs">
+                            <input
+                              type="checkbox"
+                              checked={status === s}
+                              onChange={() => setTaStatus(item.key, s)}
+                            />
+                            {s === "force" ? "Force" : "Faiblesse"}
+                          </label>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               <label className="mt-3 block text-xs font-medium text-gray-500">
                 Si pas de consensus (texte manuel)
