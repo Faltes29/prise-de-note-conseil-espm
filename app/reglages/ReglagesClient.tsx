@@ -33,6 +33,7 @@ import type {
 } from "@/types/database";
 
 const DEGREES: Degree[] = ["D1", "D2", "D3"];
+const YEARS = [1, 2, 3, 4, 5, 6];
 const PERIODS: Period[] = ["P1", "P2", "P3"];
 const CAS_LIST: Cas[] = [1, 2, 3];
 
@@ -274,19 +275,19 @@ function ClassesTab({ classes, students }: { classes: SchoolClass[]; students: S
 }
 
 function SubjectsTab({ subjects }: { subjects: Subject[] }) {
-  const [degree, setDegree] = useState<Degree>("D1");
+  const [year, setYear] = useState(1);
   const [name, setName] = useState("");
 
   return (
     <div className="space-y-4">
       <div className="flex gap-2">
-        {DEGREES.map((d) => (
+        {YEARS.map((y) => (
           <button
-            key={d}
-            onClick={() => setDegree(d)}
-            className={`rounded px-3 py-1.5 text-sm ${degree === d ? "bg-primary text-white" : "border"}`}
+            key={y}
+            onClick={() => setYear(y)}
+            className={`rounded px-3 py-1.5 text-sm ${year === y ? "bg-primary text-white" : "border"}`}
           >
-            {d}
+            {y}e
           </button>
         ))}
       </div>
@@ -295,7 +296,7 @@ function SubjectsTab({ subjects }: { subjects: Subject[] }) {
         onSubmit={async (e) => {
           e.preventDefault();
           if (!name.trim()) return;
-          await createSubject(degree, name.trim());
+          await createSubject(year, name.trim());
           setName("");
         }}
       >
@@ -311,7 +312,7 @@ function SubjectsTab({ subjects }: { subjects: Subject[] }) {
       </form>
       <ul className="space-y-1 text-sm">
         {subjects
-          .filter((s) => s.degree === degree)
+          .filter((s) => s.year === year)
           .map((s) => (
             <li key={s.id} className="flex items-center justify-between rounded border bg-white px-3 py-2">
               {s.name}
@@ -326,19 +327,19 @@ function SubjectsTab({ subjects }: { subjects: Subject[] }) {
 }
 
 function CompetenciesTab({ competencies }: { competencies: Competency[] }) {
-  const [degree, setDegree] = useState<Degree>("D1");
+  const [year, setYear] = useState(1);
   const [name, setName] = useState("");
 
   return (
     <div className="space-y-4">
       <div className="flex gap-2">
-        {DEGREES.map((d) => (
+        {YEARS.map((y) => (
           <button
-            key={d}
-            onClick={() => setDegree(d)}
-            className={`rounded px-3 py-1.5 text-sm ${degree === d ? "bg-primary text-white" : "border"}`}
+            key={y}
+            onClick={() => setYear(y)}
+            className={`rounded px-3 py-1.5 text-sm ${year === y ? "bg-primary text-white" : "border"}`}
           >
-            {d}
+            {y}e
           </button>
         ))}
       </div>
@@ -347,7 +348,7 @@ function CompetenciesTab({ competencies }: { competencies: Competency[] }) {
         onSubmit={async (e) => {
           e.preventDefault();
           if (!name.trim()) return;
-          await createCompetency(degree, name.trim());
+          await createCompetency(year, name.trim());
           setName("");
         }}
       >
@@ -363,7 +364,7 @@ function CompetenciesTab({ competencies }: { competencies: Competency[] }) {
       </form>
       <ul className="space-y-1 text-sm">
         {competencies
-          .filter((c) => c.degree === degree)
+          .filter((c) => c.year === year)
           .map((c) => (
             <li key={c.id} className="flex items-center justify-between rounded border bg-white px-3 py-2">
               {c.name}

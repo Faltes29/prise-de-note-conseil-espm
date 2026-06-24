@@ -41,14 +41,14 @@ export interface Student {
 
 export interface Subject {
   id: string;
-  degree: Degree;
+  year: number;
   name: string;
   position: number;
 }
 
 export interface Competency {
   id: string;
-  degree: Degree;
+  year: number;
   name: string;
   position: number;
 }

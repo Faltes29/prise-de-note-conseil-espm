@@ -179,9 +179,9 @@ export async function importStudents(rows: ImportStudentRow[]) {
 
 // --- Matières ------------------------------------------------------------------
 
-export async function createSubject(degree: Degree, name: string) {
+export async function createSubject(year: number, name: string) {
   const { supabase } = await requireAdmin();
-  const { error } = await supabase.from("subjects").insert({ degree, name });
+  const { error } = await supabase.from("subjects").insert({ year, name });
   if (error) throw new Error(error.message);
   revalidatePath("/reglages");
   revalidatePath("/notes");
@@ -197,9 +197,9 @@ export async function deleteSubject(id: string) {
 
 // --- Compétences transversales ------------------------------------------------
 
-export async function createCompetency(degree: Degree, name: string) {
+export async function createCompetency(year: number, name: string) {
   const { supabase } = await requireAdmin();
-  const { error } = await supabase.from("competencies").insert({ degree, name });
+  const { error } = await supabase.from("competencies").insert({ year, name });
   if (error) throw new Error(error.message);
   revalidatePath("/reglages");
   revalidatePath("/notes");

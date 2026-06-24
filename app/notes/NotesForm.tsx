@@ -152,14 +152,14 @@ export default function NotesForm({
 
   const degree = year ? degreeForYear(year) : null;
 
-  const subjectsForDegree = useMemo(
-    () => (degree ? subjects.filter((s) => s.degree === degree) : []),
-    [subjects, degree]
+  const subjectsForYear = useMemo(
+    () => (year ? subjects.filter((s) => s.year === year) : []),
+    [subjects, year]
   );
 
-  const competenciesForDegree = useMemo(
-    () => (degree ? competencies.filter((c) => c.degree === degree) : []),
-    [competencies, degree]
+  const competenciesForYear = useMemo(
+    () => (year ? competencies.filter((c) => c.year === year) : []),
+    [competencies, year]
   );
 
   // Charge l'encodage existant (ou réinitialise) quand l'élève ou la période change.
@@ -221,11 +221,11 @@ export default function NotesForm({
 
     const subjectNames = (status: SubjectStatus) =>
       joinWithEt(
-        subjectsForDegree.filter((s) => form.subjectStatus[s.id] === status).map((s) => s.name)
+        subjectsForYear.filter((s) => form.subjectStatus[s.id] === status).map((s) => s.name)
       );
 
     const competenceNames = joinWithEt(
-      competenciesForDegree.filter((c) => form.competencies[c.id]).map((c) => c.name)
+      competenciesForYear.filter((c) => form.competencies[c.id]).map((c) => c.name)
     );
 
     const taNames = (status: TaStatus) =>
@@ -259,7 +259,7 @@ export default function NotesForm({
     };
 
     return renderTemplate(template.body, vars);
-  }, [student, template, form, subjectsForDegree, competenciesForDegree, resourcePersons, pronouns]);
+  }, [student, template, form, subjectsForYear, competenciesForYear, resourcePersons, pronouns]);
 
   const aiPrompt = useMemo(
     () => (generatedComment ? buildAiPrompt(generatedComment, genre ?? "Non-défini") : ""),
@@ -463,9 +463,9 @@ export default function NotesForm({
         {student && degree && (
           <>
             <section className="rounded-lg border border-l-4 border-l-sky-400 bg-white p-4">
-              <h2 className="mb-3 text-sm font-semibold text-sky-700">Matières ({degree})</h2>
+              <h2 className="mb-3 text-sm font-semibold text-sky-700">Matières ({year}e année)</h2>
               <div className="space-y-2">
-                {subjectsForDegree.map((subject) => (
+                {subjectsForYear.map((subject) => (
                   <div key={subject.id} className="flex items-center justify-between gap-3 text-sm">
                     <span>{subject.name}</span>
                     <div className="flex gap-3">
@@ -488,7 +488,7 @@ export default function NotesForm({
             <section className="rounded-lg border border-l-4 border-l-emerald-400 bg-white p-4">
               <h2 className="mb-3 text-sm font-semibold text-emerald-700">Compétences transversales</h2>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {competenciesForDegree.map((c) => (
+                {competenciesForYear.map((c) => (
                   <label key={c.id} className="flex items-center gap-2 text-sm">
                     <input
                       type="checkbox"
