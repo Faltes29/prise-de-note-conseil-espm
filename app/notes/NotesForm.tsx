@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { saveEncoding } from "@/app/actions";
 import { renderTemplate, buildAiPrompt, joinWithEt } from "@/lib/template";
@@ -114,6 +114,8 @@ export default function NotesForm({
   const [form, setForm] = useState<FormState>(defaultFormState());
   const [saving, setSaving] = useState(false);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
+  const [toastVisible, setToastVisible] = useState(false);
+  const skipNextAutosaveRef = useRef(true);
 
   // Pré-sélection via lien profond (?studentId=&period=), ex. depuis la page Données encodées.
   useEffect(() => {
@@ -192,7 +194,27 @@ export default function NotesForm({
     const existing = encodingsByKey.get(`${studentId}__${period}`);
     setForm(existing ? encodingToFormState(existing) : defaultFormState());
     setSavedMessage(null);
+    skipNextAutosaveRef.current = true;
   }, [studentId, period, encodingsByKey]);
+
+  // Enregistrement automatique après une courte inactivité, sauf juste après le chargement d'un élève/période.
+  useEffect(() => {
+    if (skipNextAutosaveRef.current) {
+      skipNextAutosaveRef.current = false;
+      return;
+    }
+    if (!studentId) return;
+    const timer = setTimeout(() => {
+      persistEncoding();
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [form, studentId]);
+
+  useEffect(() => {
+    if (!toastVisible) return;
+    const timer = setTimeout(() => setToastVisible(false), 2500);
+    return () => clearTimeout(timer);
+  }, [toastVisible]);
 
   function toggleSubjectStatus(subjectId: string, status: SubjectStatus) {
     setForm((prev) => {
@@ -311,9 +333,11 @@ export default function NotesForm({
         generatedComment: generatedComment || null,
       });
       setSavedMessage("Enregistré ✓");
+      setToastVisible(true);
       return true;
     } catch (err) {
       setSavedMessage(null);
+      setToastVisible(false);
       alert(err instanceof Error ? err.message : "Erreur lors de l'enregistrement.");
       return false;
     } finally {
@@ -756,10 +780,17 @@ export default function NotesForm({
               <button onClick={handleNext} className="rounded border px-3 py-2 text-sm hover:bg-gray-50">
                 Élève suivant →
               </button>
-              {savedMessage && <span className="text-sm text-green-600">{savedMessage}</span>}
             </div>
           </>
         )}
+
+        <div
+          className={`no-print pointer-events-none fixed bottom-6 right-6 z-50 rounded-lg bg-gray-900/70 px-4 py-2 text-sm text-white shadow-lg backdrop-blur transition-opacity duration-300 ${
+            toastVisible ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          {savedMessage ?? "Enregistré ✓"}
+        </div>
     </main>
   );
 }
