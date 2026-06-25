@@ -116,6 +116,7 @@ export default function NotesForm({
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
   const skipNextAutosaveRef = useRef(true);
+  const encodingsByKeyRef = useRef<Map<string, StudentEncoding>>(new Map());
 
   // Pré-sélection via lien profond (?studentId=&period=), ex. depuis la page Données encodées.
   useEffect(() => {
@@ -139,6 +140,12 @@ export default function NotesForm({
     for (const e of encodings) map.set(`${e.student_id}__${e.period}`, e);
     return map;
   }, [encodings]);
+
+  // Toujours à jour, mais ne déclenche aucun effet : évite que le rafraîchissement
+  // des données après un enregistrement n'écrase le formulaire en cours d'édition.
+  useEffect(() => {
+    encodingsByKeyRef.current = encodingsByKey;
+  }, [encodingsByKey]);
 
   const classesForYear = useMemo(
     () => classes.filter((c) => c.year === year),
@@ -186,18 +193,21 @@ export default function NotesForm({
   );
 
   // Charge l'encodage existant (ou réinitialise) quand l'élève ou la période change.
+  // Ne dépend pas de encodingsByKey : un rafraîchissement des données suite à un
+  // enregistrement automatique ne doit pas écraser le formulaire en cours d'édition.
   useEffect(() => {
     if (!studentId) {
       setForm(defaultFormState());
       return;
     }
-    const existing = encodingsByKey.get(`${studentId}__${period}`);
+    const existing = encodingsByKeyRef.current.get(`${studentId}__${period}`);
     setForm(existing ? encodingToFormState(existing) : defaultFormState());
     setSavedMessage(null);
     skipNextAutosaveRef.current = true;
-  }, [studentId, period, encodingsByKey]);
+  }, [studentId, period]);
 
-  // Enregistrement automatique après une courte inactivité, sauf juste après le chargement d'un élève/période.
+  // Enregistrement automatique après une minute d'inactivité, pour ne pas
+  // perturber la prise de notes en cours (sauf juste après le chargement d'un élève/période).
   useEffect(() => {
     if (skipNextAutosaveRef.current) {
       skipNextAutosaveRef.current = false;
@@ -206,7 +216,7 @@ export default function NotesForm({
     if (!studentId) return;
     const timer = setTimeout(() => {
       persistEncoding();
-    }, 1200);
+    }, 60000);
     return () => clearTimeout(timer);
   }, [form, studentId]);
 
