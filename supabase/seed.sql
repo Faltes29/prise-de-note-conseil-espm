@@ -7,39 +7,58 @@ insert into public.subjects (year, name, position)
 select y, name, position from unnest(array[1, 2]) y, (values
   ('Art', 1),
   ('Citoyenneté', 2),
-  ('EPS', 3),
-  ('Français', 4),
-  ('Mathématiques', 5),
-  ('Néerlandais', 6),
-  ('Sciences', 7)
+  ('Culture antique', 3),
+  ('Education physique', 4),
+  ('Français', 5),
+  ('Histoire-Géographie', 6),
+  ('Mathématique', 7),
+  ('Néerlandais', 8),
+  ('Sciences', 9),
+  ('Sciences sociales', 10),
+  ('Education à la technologie', 11)
 ) as d1(name, position)
 union all
 select y, name, position from unnest(array[3, 4]) y, (values
   ('Anglais', 1),
-  ('Biologie', 2),
-  ('Chimie', 3),
-  ('EPS', 4),
-  ('Espagnol', 5),
-  ('Français', 6),
-  ('Géographie', 7),
-  ('Histoire', 8),
-  ('Mathématiques', 9),
-  ('Néerlandais', 10),
-  ('Physique', 11)
+  ('Art', 2),
+  ('Biologie', 3),
+  ('Chimie', 4),
+  ('Citoyenneté', 5),
+  ('Communication', 6),
+  ('Culture antique', 7),
+  ('Education physique', 8),
+  ('Espagnol', 9),
+  ('Français', 10),
+  ('Géographie', 11),
+  ('Physique', 12),
+  ('Histoire', 13),
+  ('Mathématique', 14),
+  ('Néerlandais', 15),
+  ('Sciences', 16),
+  ('Sciences économiques', 17),
+  ('Sciences sociales', 18)
 ) as d2(name, position)
 union all
 select y, name, position from unnest(array[5, 6]) y, (values
   ('Anglais', 1),
-  ('Biologie', 2),
-  ('Chimie', 3),
-  ('EPS', 4),
-  ('Espagnol', 5),
-  ('Français', 6),
-  ('Géographie', 7),
-  ('Histoire', 8),
-  ('Mathématiques', 9),
-  ('Néerlandais', 10),
-  ('Physique', 11)
+  ('Art', 2),
+  ('Biologie', 3),
+  ('Chimie', 4),
+  ('Citoyenneté', 5),
+  ('Communication', 6),
+  ('Culture antique', 7),
+  ('Education physique', 8),
+  ('Espagnol', 9),
+  ('Français', 10),
+  ('Géographie', 11),
+  ('Physique', 12),
+  ('Histoire', 13),
+  ('Mathématique', 14),
+  ('Néerlandais', 15),
+  ('Sciences', 16),
+  ('Sciences économiques', 17),
+  ('Sciences sociales', 18),
+  ('Option sciences', 19)
 ) as d3(name, position)
 on conflict (year, name) do nothing;
 
@@ -58,33 +77,19 @@ select y, name, position from unnest(array[1, 2]) y, (values
   ('Transfert', 9)
 ) as d1(name, position)
 union all
-select y, name, position from unnest(array[3, 4]) y, (values
+select y, name, position from unnest(array[3, 4, 5, 6]) y, (values
   ('Application', 1),
-  ('Argumentation', 2),
-  ('Autonomie', 3),
-  ('Communication', 4),
-  ('Consignes', 5),
-  ('Justification', 6),
-  ('Recherche', 7),
-  ('Restitution', 8),
-  ('Sélection d''information', 9),
+  ('Autonomie', 2),
+  ('Communication', 3),
+  ('Consignes', 4),
+  ('Justification', 5),
+  ('Recherche', 6),
+  ('Restitution', 7),
+  ('Sélection d''information', 8),
+  ('Transfert', 9),
   ('Synthèse', 10),
-  ('Transfert', 11)
+  ('Argumentation', 11)
 ) as d2(name, position)
-union all
-select y, name, position from unnest(array[5, 6]) y, (values
-  ('Application', 1),
-  ('Argumentation', 2),
-  ('Autonomie', 3),
-  ('Communication', 4),
-  ('Consignes', 5),
-  ('Justification', 6),
-  ('Recherche', 7),
-  ('Restitution', 8),
-  ('Sélection d''information', 9),
-  ('Synthèse', 10),
-  ('Transfert', 11)
-) as d3(name, position)
 on conflict (year, name) do nothing;
 
 -- Personnes ressources --------------------------------------------------------
