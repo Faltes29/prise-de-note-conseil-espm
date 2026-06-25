@@ -171,11 +171,17 @@ export default function NotesForm({
     [competencies, year]
   );
 
+  const subjectStatusRank: Record<SubjectStatus, number> = { echec: 0, difficulte: 1, ne: 2 };
+
   const sortedSubjectsForYear = useMemo(
     () =>
-      [...subjectsForYear].sort(
-        (a, b) => (form.subjectStatus[a.id] ? 0 : 1) - (form.subjectStatus[b.id] ? 0 : 1)
-      ),
+      [...subjectsForYear].sort((a, b) => {
+        const statusA = form.subjectStatus[a.id];
+        const statusB = form.subjectStatus[b.id];
+        const rankA = statusA ? subjectStatusRank[statusA] : 3;
+        const rankB = statusB ? subjectStatusRank[statusB] : 3;
+        return rankA - rankB;
+      }),
     [subjectsForYear, form.subjectStatus]
   );
 
