@@ -18,14 +18,8 @@ export default async function ReglagesPage() {
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", userData.user.id)
-    .single<Profile>();
-  if (!profile?.is_admin) redirect("/notes");
-
   const [
+    { data: profile },
     { data: classes },
     { data: students },
     { data: subjects },
@@ -34,6 +28,7 @@ export default async function ReglagesPage() {
     { data: taskStatuses },
     { data: templates },
   ] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", userData.user.id).single<Profile>(),
     supabase.from("classes").select("*").order("year").order("name"),
     supabase.from("students").select("*").order("last_name"),
     supabase.from("subjects").select("*").order("position"),
@@ -42,6 +37,7 @@ export default async function ReglagesPage() {
     supabase.from("task_statuses").select("*").order("position"),
     supabase.from("templates").select("*"),
   ]);
+  if (!profile?.is_admin) redirect("/notes");
 
   return (
     <ReglagesClient
